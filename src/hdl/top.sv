@@ -30,7 +30,7 @@ module top(
 
 	video_generator #(.DISPLAY_WIDTH(`DISPLAY_WIDTH), .DISPLAY_HEIGHT(`DISPLAY_HEIGHT)) videogen (
 		.rst(rst),
-		.clk(logic_clk),
+		.clk(~logic_clk),
 		.framebuffer_wr_en(framebuffer_wr_en),
 		.framebuffer_wr_addr(framebuffer_wr_addr),
 		.framebuffer_data(framebuffer_wr_in)
