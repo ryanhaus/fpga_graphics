@@ -59,21 +59,6 @@ int main() {
 	// initialize verilator
 	Vtop* top = new Vtop;
 
-	// write some data to the framebuffer on the FPGA
-	for (int y = 0; y < DISPLAY_HEIGHT; y++) {
-		for (int x = 0; x < DISPLAY_WIDTH; x++) {
-			top->wr_clk = 0;
-			pixel color = { 0, y, x };
-			uint16_t* px = (uint16_t*)&color;
-			top->wr_in = *px;
-			top->x_in = x;
-			top->y_in = y;
-			top->eval();
-			top->wr_clk = 1;
-			top->eval();
-		}
-	}
-
 	// main loop
 	pixel framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH] = { 0 };
 
@@ -90,11 +75,11 @@ int main() {
 		// update framebuffer
 		for (int y = 0; y < DISPLAY_HEIGHT; y++) {
 			for (int x = 0; x < DISPLAY_WIDTH; x++) {
-				top->rd_clk = 0;
+				top->display_out_clk = 0;
 				top->x_in = x;
 				top->y_in = y;
 				top->eval();
-				top->rd_clk = 1;
+				top->display_out_clk = 1;
 				top->eval();
 
 				uint16_t pixel_out = top->pixel_out;
@@ -102,6 +87,12 @@ int main() {
 
 				framebuffer[y][x] = *px;
 			}
+		}
+
+		// pulse logic_clk
+		for (int i = 0; i < 100 * 2; i++) {
+			top->logic_clk = ~top->logic_clk;
+			top->eval();
 		}
 
 		// display framebuffer
