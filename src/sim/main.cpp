@@ -59,6 +59,21 @@ int main() {
 	// initialize verilator
 	Vtop* top = new Vtop;
 
+	// write some data to the framebuffer on the FPGA
+	for (int y = 0; y < WINDOW_HEIGHT; y++) {
+		for (int x = 0; x < WINDOW_WIDTH; x++) {
+			top->wr_clk = 0;
+			pixel color = { 0, y, x };
+			uint16_t* px = (uint16_t*)&color;
+			top->wr_in = *px;
+			top->x_in = x;
+			top->y_in = y;
+			top->eval();
+			top->wr_clk = 1;
+			top->eval();
+		}
+	}
+
 	// main loop
 	pixel framebuffer[WINDOW_HEIGHT][WINDOW_WIDTH] = { 0 };
 
@@ -75,11 +90,11 @@ int main() {
 		// update framebuffer
 		for (int y = 0; y < WINDOW_HEIGHT; y++) {
 			for (int x = 0; x < WINDOW_WIDTH; x++) {
-				top->clk = 0;
+				top->rd_clk = 0;
 				top->x_in = x;
 				top->y_in = y;
 				top->eval();
-				top->clk = 1;
+				top->rd_clk = 1;
 				top->eval();
 
 				uint16_t pixel_out = top->pixel_out;
