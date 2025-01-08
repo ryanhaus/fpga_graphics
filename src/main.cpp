@@ -4,6 +4,13 @@
 #define WINDOW_HEIGHT 240
 #define WINDOW_SCALE 2
 
+struct pixel {
+	uint16_t
+		r: 5,
+		g: 6,
+		b: 5;
+};
+
 int main() {
 	// initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -48,6 +55,9 @@ int main() {
 		return 1;
 	}
 
+	// main loop
+	pixel framebuffer[WINDOW_HEIGHT][WINDOW_WIDTH] = { 0 };
+
 	bool running = true;
 	while (running) {
 		SDL_Event e;
@@ -56,6 +66,11 @@ int main() {
 				running = false;
 			}
 		}
+
+		SDL_UpdateTexture(texture, NULL, framebuffer, WINDOW_WIDTH * sizeof(pixel));
+		SDL_RenderClear(renderer);
+		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_RenderPresent(renderer);
 	}
 
 	return 0;
