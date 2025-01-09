@@ -89,18 +89,24 @@ int main() {
 	m_trace->open("trace.vcd");
 
 	// reset cycle
-	top->logic_clk = 0;
+	top->logic_clk = 1;
 	top->rst = 1;
 	verilator_tick(top, m_trace);
-	top->logic_clk = 1;
-	verilator_tick(top, m_trace);
+	for (int i = 0; i < 2; i++) {
+		top->logic_clk = !top->logic_clk;
+		verilator_tick(top, m_trace);
+	}
 	top->rst = 0;
 	top->logic_clk = 0;
 	verilator_tick(top, m_trace);
 	
 	// write triangles to VRAM
-	write_tri_to_vram(top, m_trace, create_tri(160, 20, 300, 220, 20, 220), 0);
-	write_tri_to_vram(top, m_trace, create_tri(160, 20, 300, 20, 300, 220), 1);
+	write_tri_to_vram(top, m_trace, create_tri(0, 0, 20, 20, 0, 20), 0);
+	write_tri_to_vram(top, m_trace, create_tri(160, 20, 300, 220, 20, 220), 1);
+	write_tri_to_vram(top, m_trace, create_tri(160, 20, 300, 20, 300, 220), 2);
+	write_tri_to_vram(top, m_trace, create_tri(0, 0, 20, 0, 20, 20), 3);
+	write_tri_to_vram(top, m_trace, create_tri(310, 230, 320, 230, 319, 239), 4);
+	write_tri_to_vram(top, m_trace, create_tri(310, 230, 319, 239, 310, 239), 5);
 
 	// main loop
 	pixel framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH] = { 0 };
