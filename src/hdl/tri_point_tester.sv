@@ -18,13 +18,15 @@ module tri_point_tester (
 	integer signed abp;
 	integer signed bcp;
 	integer signed cap;
+	integer signed signed_area;
 
 	always_comb begin
 		abp = edge_fn(in_tri.a, in_tri.b, in_point);
 		bcp = edge_fn(in_tri.b, in_tri.c, in_point);
 		cap = edge_fn(in_tri.c, in_tri.a, in_point);
+		signed_area = edge_fn(in_tri.a, in_tri.b, in_tri.c);
 
-		point_in_tri = abp >= 0 && bcp >= 0 && cap >= 0;
+		point_in_tri = abp >= 0 && bcp >= 0 && cap >= 0 && signed_area > 0;
 	end
 
 endmodule
