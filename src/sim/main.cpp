@@ -1,5 +1,9 @@
 #include <SDL2/SDL.h>
 #include <Vtop.h>
+#include <verilated_vcd_c.h>
+#include <string.h>
+#include <cassert>
+#include "triangle.hpp"
 
 #define DISPLAY_WIDTH 320
 #define DISPLAY_HEIGHT 240
@@ -11,6 +15,12 @@ struct pixel {
 		g: 6,
 		b: 5;
 };
+
+void verilator_tick(Vtop* top, VerilatedVcdC* m_trace) {
+	static uint64_t time_ps = 0;
+	top->eval();
+	//m_trace->dump(time_ps++);
+}
 
 int main() {
 	// initialize SDL
@@ -59,6 +69,41 @@ int main() {
 	// initialize verilator
 	Vtop* top = new Vtop;
 
+	Verilated::traceEverOn(true);
+	VerilatedVcdC* m_trace = new VerilatedVcdC;
+	top->trace(m_trace, 99);
+	m_trace->open("trace.vcd");
+
+	// reset cycle
+	top->logic_clk = 0;
+	top->rst = 1;
+	verilator_tick(top, m_trace);
+	top->logic_clk = 1;
+	verilator_tick(top, m_trace);
+	top->rst = 0;
+	top->logic_clk = 0;
+	verilator_tick(top, m_trace);
+	
+	// write a triangle to VRAM
+	assert(sizeof(triangle) == sizeof(top->vram_wr_in));
+	triangle tri;
+	tri.a.x = 160;
+	tri.a.y = 20;
+	tri.b.x = 300;
+	tri.b.y = 220;
+	tri.c.x = 20;
+	tri.c.y = 220;
+	memcpy(&top->vram_wr_in, &tri, sizeof(triangle));
+
+	top->vram_wr_addr = 0;
+	top->vram_wr_clk = 0;
+	top->vram_wr_en = 1;
+	verilator_tick(top, m_trace);
+	top->vram_wr_clk = 1;
+	verilator_tick(top, m_trace);
+	top->vram_wr_en = 0;
+	top->vram_wr_clk = 0;
+
 	// main loop
 	pixel framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH] = { 0 };
 
@@ -70,6 +115,12 @@ int main() {
 			if (e.type == SDL_QUIT) {
 				running = false;
 			}
+		}
+
+		// pulse logic_clk
+		for (int i = 0; i < 1000 * 2; i++) {
+			top->logic_clk = ~top->logic_clk;
+			verilator_tick(top, m_trace);
 		}
 
 		// update framebuffer
@@ -89,12 +140,6 @@ int main() {
 			}
 		}
 
-		// pulse logic_clk
-		for (int i = 0; i < 100 * 2; i++) {
-			top->logic_clk = ~top->logic_clk;
-			top->eval();
-		}
-
 		// display framebuffer
 		SDL_UpdateTexture(texture, NULL, framebuffer, DISPLAY_WIDTH * sizeof(pixel));
 		SDL_RenderClear(renderer);
@@ -104,6 +149,7 @@ int main() {
 
 	// free everything
 	top->final();
+	m_trace->close();
 	SDL_DestroyTexture(texture);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
