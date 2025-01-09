@@ -99,24 +99,8 @@ int main() {
 	verilator_tick(top, m_trace);
 	
 	// write triangles to VRAM
-
-	triangle tri;
-	tri.a.x = 160;
-	tri.a.y = 20;
-	tri.b.x = 300;
-	tri.b.y = 220;
-	tri.c.x = 20;
-	tri.c.y = 220;
-	write_tri_to_vram(top, m_trace, tri, 0);
-
-	tri.a.x = 160;
-	tri.a.y = 20;
-	tri.b.x = 300;
-	tri.b.y = 20;
-	tri.c.x = 300;
-	tri.c.y = 220;
-	write_tri_to_vram(top, m_trace, tri, 1);
-
+	write_tri_to_vram(top, m_trace, create_tri(160, 20, 300, 220, 20, 220), 0);
+	write_tri_to_vram(top, m_trace, create_tri(160, 20, 300, 20, 300, 220), 1);
 
 	// main loop
 	pixel framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH] = { 0 };
