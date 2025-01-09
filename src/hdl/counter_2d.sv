@@ -11,9 +11,13 @@ module counter_2d #(
 	input clk,
 	input enable,
 
+	input bit [X_BITS-1 : 0] x_start,
+	input bit [Y_BITS-1 : 0] y_start,
+	input bit [X_BITS-1 : 0] x_end,
+	input bit [Y_BITS-1 : 0] y_end,
+
 	output bit [X_BITS-1 : 0] out_x,
 	output bit [Y_BITS-1 : 0] out_y,
-	output bit [TOTAL_BITS-1 : 0] out_total,
 	output bit done
 );
 
@@ -22,28 +26,23 @@ module counter_2d #(
 
 		if (rst) begin
 			// reset all values back to 0
-			out_x = 'b0;
-			out_y = 'b0;
-			out_total = 'b0;
+			out_x = x_start;
+			out_y = y_start;
 		end
 		else if (enable) begin
-			// advance the x and total counters
-			out_x = out_x + 'b1;
-			out_total = out_total + 'b1;
-			
-			// handle x 'overflow'
-			if (out_x == WIDTH) begin
-				// reset x to 0, advance the y counter
-				out_x = 'b0;
-				out_y = out_y + 'b1;
+			if (out_x == x_end) begin
+				out_x = x_start;
 				
-				// handle y 'overflow'
-				if (out_y == HEIGHT) begin
-					// reset y and total counters to 0
-					out_y = 'b0;
-					out_total = 'b0;
+				if (out_y == y_end) begin
+					out_y = y_start;
 					done = 'b1;
 				end
+				else begin
+					out_y = out_y + 'b1;
+				end
+			end
+			else begin
+				out_x = out_x + 'b1;
 			end
 		end
 	end
