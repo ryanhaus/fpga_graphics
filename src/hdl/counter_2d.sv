@@ -42,7 +42,7 @@ module counter_2d #(
 					// reset y and total counters to 0
 					out_y = 'b0;
 					out_total = 'b0;
-					done = 'b0;
+					done = 'b1;
 				end
 			end
 		end
