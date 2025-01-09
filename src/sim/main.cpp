@@ -1,8 +1,8 @@
 #include <SDL2/SDL.h>
 #include <Vtop.h>
 #include <verilated_vcd_c.h>
-#include <string.h>
 #include <cassert>
+#include <string.h>
 #include "triangle.hpp"
 
 #define DISPLAY_WIDTH 320
@@ -19,7 +19,21 @@ struct pixel {
 void verilator_tick(Vtop* top, VerilatedVcdC* m_trace) {
 	static uint64_t time_ps = 0;
 	top->eval();
-	//m_trace->dump(time_ps++);
+	// m_trace->dump(time_ps++);
+}
+
+void write_tri_to_vram(Vtop* top, VerilatedVcdC* m_trace, triangle tri, int vram_addr) {
+	assert(sizeof(triangle) == sizeof(top->vram_wr_in));
+	memcpy(&top->vram_wr_in[0], &tri, sizeof(triangle));
+
+	top->vram_wr_addr = vram_addr;
+	top->vram_wr_clk = 0;
+	top->vram_wr_en = 1;
+	verilator_tick(top, m_trace);
+	top->vram_wr_clk = 1;
+	verilator_tick(top, m_trace);
+	top->vram_wr_en = 0;
+	top->vram_wr_clk = 0;
 }
 
 int main() {
@@ -84,8 +98,8 @@ int main() {
 	top->logic_clk = 0;
 	verilator_tick(top, m_trace);
 	
-	// write a triangle to VRAM
-	assert(sizeof(triangle) == sizeof(top->vram_wr_in));
+	// write triangles to VRAM
+
 	triangle tri;
 	tri.a.x = 160;
 	tri.a.y = 20;
@@ -93,16 +107,16 @@ int main() {
 	tri.b.y = 220;
 	tri.c.x = 20;
 	tri.c.y = 220;
-	memcpy(&top->vram_wr_in, &tri, sizeof(triangle));
+	write_tri_to_vram(top, m_trace, tri, 0);
 
-	top->vram_wr_addr = 0;
-	top->vram_wr_clk = 0;
-	top->vram_wr_en = 1;
-	verilator_tick(top, m_trace);
-	top->vram_wr_clk = 1;
-	verilator_tick(top, m_trace);
-	top->vram_wr_en = 0;
-	top->vram_wr_clk = 0;
+	tri.a.x = 160;
+	tri.a.y = 20;
+	tri.b.x = 300;
+	tri.b.y = 20;
+	tri.c.x = 300;
+	tri.c.y = 220;
+	write_tri_to_vram(top, m_trace, tri, 1);
+
 
 	// main loop
 	pixel framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH] = { 0 };

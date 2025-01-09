@@ -23,14 +23,15 @@ module video_generator #(
 );
 
 	// handle going through each pixel in the display
+	bit counter_enable;
 	integer display_x;
 	integer display_y;
 	bit counter_done;
 
 	counter_2d #(.WIDTH(DISPLAY_WIDTH), .HEIGHT(DISPLAY_HEIGHT)) display_counter (
 		.rst(rst),
-		.clk(clk),
-		.enable(1'b1),
+		.clk(~clk),
+		.enable(counter_enable),
 		.out_x(display_x),
 		.out_y(display_y),
 		.out_total(framebuffer_wr_addr),
@@ -49,8 +50,20 @@ module video_generator #(
 	bit [5:0] g = 'b0;
 	bit [4:0] b = 'b0;
 
-	always_comb begin
-		framebuffer_data = { r, g, b };
+	// move onto the next triangle in memory once finished
+	always_ff @(posedge clk) begin
+		if (rst) begin
+			counter_enable = 'b0;
+			framebuffer_data = 'b0;
+		end
+		else begin
+			counter_enable = 'b1;
+			framebuffer_data = { r, g, b };
+
+			if (counter_done) begin
+				vram_rd_addr = vram_rd_addr + 'b1;
+			end
+		end
 	end
 
 endmodule
