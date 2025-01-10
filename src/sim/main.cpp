@@ -23,7 +23,7 @@ void verilator_tick(Vtop* top, VerilatedVcdC* m_trace) {
 }
 
 void write_tri_to_vram(Vtop* top, VerilatedVcdC* m_trace, triangle tri, int vram_addr) {
-	assert(sizeof(triangle) == sizeof(top->vram_wr_in));
+	assert(sizeof(triangle) <= sizeof(top->vram_wr_in));
 	memcpy(&top->vram_wr_in[0], &tri, sizeof(triangle));
 
 	top->vram_wr_addr = vram_addr;
@@ -101,12 +101,17 @@ int main() {
 	verilator_tick(top, m_trace);
 	
 	// write triangles to VRAM
-	write_tri_to_vram(top, m_trace, create_tri(0, 0, 20, 20, 0, 20), 0);
-	write_tri_to_vram(top, m_trace, create_tri(160, 20, 300, 220, 20, 220), 1);
-	write_tri_to_vram(top, m_trace, create_tri(160, 20, 300, 20, 300, 220), 2);
-	write_tri_to_vram(top, m_trace, create_tri(0, 0, 20, 0, 20, 20), 3);
-	write_tri_to_vram(top, m_trace, create_tri(310, 230, 320, 230, 319, 239), 4);
-	write_tri_to_vram(top, m_trace, create_tri(310, 230, 319, 239, 310, 239), 5);
+	color red = rgb(1.0, 0.0, 0.0);
+	color green = rgb(0.0, 1.0, 0.0);
+	color blue = rgb(0.0, 0.0, 1.0);
+	color white = rgb(1.0, 1.0, 1.0);
+
+	write_tri_to_vram(top, m_trace, create_tri(red, 0, 0, 20, 20, 0, 20), 0);
+	write_tri_to_vram(top, m_trace, create_tri(green, 160, 20, 300, 220, 20, 220), 1);
+	write_tri_to_vram(top, m_trace, create_tri(blue, 160, 20, 300, 20, 300, 220), 2);
+	write_tri_to_vram(top, m_trace, create_tri(white, 0, 0, 20, 0, 20, 20), 3);
+	write_tri_to_vram(top, m_trace, create_tri(red, 310, 230, 320, 230, 319, 239), 4);
+	write_tri_to_vram(top, m_trace, create_tri(green, 310, 230, 319, 239, 310, 239), 5);
 
 	// main loop
 	pixel framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH] = { 0 };

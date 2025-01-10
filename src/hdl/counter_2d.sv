@@ -30,10 +30,10 @@ module counter_2d #(
 			out_y = y_start;
 		end
 		else if (enable) begin
-			if (out_x == x_end) begin
+			if (out_x >= x_end) begin
 				out_x = x_start;
 				
-				if (out_y == y_end) begin
+				if (out_y >= y_end) begin
 					out_y = y_start;
 					done = 'b1;
 				end

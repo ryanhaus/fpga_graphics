@@ -82,11 +82,6 @@ module video_generator #(
 		.max_y(tri_bb_max_y)
 	);
 
-	// output color
-	bit [4:0] r = 5'h1F;
-	bit [5:0] g = 'b0;
-	bit [4:0] b = 'b0;
-
 	// state handler
 	video_gen_state state;
 
@@ -130,7 +125,7 @@ module video_generator #(
 				TEST_TRIANGLE: begin
 					// tests if the current point is in the triangle, if so,
 					// then write some data to the framebuffer
-					framebuffer_data = { r, g, b };
+					framebuffer_data = current_tri.tri_color;
 					framebuffer_wr_addr = display_x + DISPLAY_WIDTH * display_y;
 					framebuffer_wr_en = point_in_tri;
 
