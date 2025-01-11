@@ -32,11 +32,10 @@ module video_generator #(
 );
 
 	triangle current_tri;
+	point current_point;
 
 	// handle going through each pixel in the display
 	bit counter_rst;
-	integer display_x;
-	integer display_y;
 	bit counter_done;
 
 	integer counter_x_start;
@@ -52,8 +51,8 @@ module video_generator #(
 		.y_start(counter_y_start),
 		.x_end(counter_x_end),
 		.y_end(counter_y_end),
-		.out_x(display_x),
-		.out_y(display_y),
+		.out_x(current_point.x),
+		.out_y(current_point.y),
 		.done(counter_done)
 	);
 
@@ -62,7 +61,7 @@ module video_generator #(
 	bit point_in_tri;
 
 	tri_point_tester tri_tester (
-		.in_point({ display_x, display_y }),
+		.in_point(current_point),
 		.in_tri(current_tri),
 		.point_in_tri(point_in_tri)
 	);
@@ -95,7 +94,7 @@ module video_generator #(
 
 	tri_point_weight_calc weight_calc_inst (
 		.in_tri(current_tri),
-		.in_point({ display_x, display_y }),
+		.in_point(current_point),
 		.tri_edge_fn(tri_edge_fn),
 		.inverse_tri_edge_fn(inverse_edge_fn),
 		.weight_a(weight_a),
@@ -129,6 +128,7 @@ module video_generator #(
 	color out_color;
 
 	color_gen color_gen_inst (
+		.in_tri(current_tri),
 		.weight_a(weight_a),
 		.weight_b(weight_b),
 		.weight_c(weight_c),
@@ -202,7 +202,7 @@ module video_generator #(
 					// tests if the current point is in the triangle, if so,
 					// then write some data to the framebuffer
 					framebuffer_data = out_color;
-					framebuffer_wr_addr = display_x + DISPLAY_WIDTH * display_y;
+					framebuffer_wr_addr = current_point.x + DISPLAY_WIDTH * current_point.y;
 					framebuffer_wr_en = point_in_tri;
 
 					// move onto the next triangle in memory once finished

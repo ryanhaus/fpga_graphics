@@ -101,17 +101,27 @@ int main() {
 	verilator_tick(top, m_trace);
 	
 	// write triangles to VRAM
-	color red = rgb(1.0, 0.0, 0.0);
-	color green = rgb(0.0, 1.0, 0.0);
-	color blue = rgb(0.0, 0.0, 1.0);
-	color white = rgb(1.0, 1.0, 1.0);
+	write_tri_to_vram(
+		top,
+		m_trace,
+		create_tri(
+			create_point(160, 20, rgb(1.0, 0.0, 0.0)),
+			create_point(300, 220, rgb(0.0, 1.0, 0.0)),
+			create_point(20, 220, rgb(0.0, 0.0, 1.0))
+		),
+		0
+	);
 
-	write_tri_to_vram(top, m_trace, create_tri(red, 0, 0, 20, 20, 0, 20), 0);
-	write_tri_to_vram(top, m_trace, create_tri(green, 160, 20, 300, 220, 20, 220), 1);
-	write_tri_to_vram(top, m_trace, create_tri(blue, 160, 20, 300, 20, 300, 220), 2);
-	write_tri_to_vram(top, m_trace, create_tri(white, 0, 0, 20, 0, 20, 20), 3);
-	write_tri_to_vram(top, m_trace, create_tri(red, 310, 230, 320, 230, 319, 239), 4);
-	write_tri_to_vram(top, m_trace, create_tri(green, 310, 230, 319, 239, 310, 239), 5);
+	write_tri_to_vram(
+		top,
+		m_trace,
+		create_tri(
+			create_point(160, 20, rgb(1.0, 0.0, 0.0)),
+			create_point(300, 20, rgb(1.0, 1.0, 0.0)),
+			create_point(300, 220, rgb(0.0, 1.0, 0.0))
+		),
+		1
+	);
 
 	// main loop
 	pixel framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH] = { 0 };
@@ -127,7 +137,7 @@ int main() {
 		}
 
 		// pulse logic_clk
-		for (int i = 0; i < 5000 * 2; i++) {
+		for (int i = 0; i < 1000 * 2; i++) {
 			top->logic_clk = !top->logic_clk;
 			verilator_tick(top, m_trace);
 		}

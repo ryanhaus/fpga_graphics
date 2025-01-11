@@ -4,11 +4,6 @@
 
 #pragma pack(push, 1)
 
-struct point {
-	uint32_t y;
-	uint32_t x;
-};
-
 struct color {
 	uint16_t
 		b: 5,
@@ -16,8 +11,13 @@ struct color {
 		r: 5;
 };
 
+struct point {
+	color col;
+	uint32_t y;
+	uint32_t x;
+};
+
 struct triangle {
-	color tri_color;
 	point c;
 	point b;
 	point a;
@@ -34,15 +34,20 @@ color rgb(float r, float g, float b) {
 	return col;
 }
 
-triangle create_tri(color tri_color, uint32_t ax, uint32_t ay, uint32_t bx, uint32_t by, uint32_t cx, uint32_t cy) {
+point create_point(uint32_t x, uint32_t y, color col) {
+	point pt;
+	pt.x = x;
+	pt.y = y;
+	pt.col = col;
+
+	return pt;
+}
+
+triangle create_tri(point a, point b, point c) {
 	triangle tri;
-	tri.tri_color = tri_color;
-	tri.a.x = ax;
-	tri.a.y = ay;
-	tri.b.x = bx;
-	tri.b.y = by;
-	tri.c.x = cx;
-	tri.c.y = cy;
+	tri.a = a;
+	tri.b = b;
+	tri.c = c;
 
 	return tri;
 }

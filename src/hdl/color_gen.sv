@@ -1,4 +1,5 @@
 module color_gen (
+	input triangle in_tri,
 	input integer weight_a,
 	input integer weight_b,
 	input integer weight_c,
@@ -18,9 +19,9 @@ module color_gen (
 	assign out_col.b = b_result[B_BITS-1 : 32];
 
 	always_comb begin
-		r_result = 2 * 31 * weight_a;
-		g_result = 2 * 63 * weight_b;
-		b_result = 2 * 31 * weight_c;
+		r_result = 2 * (weight_a * in_tri.a.col.r + weight_b * in_tri.b.col.r + weight_c * in_tri.c.col.r);
+		g_result = 2 * (weight_a * in_tri.a.col.g + weight_b * in_tri.b.col.g + weight_c * in_tri.c.col.g);
+		b_result = 2 * (weight_a * in_tri.a.col.b + weight_b * in_tri.b.col.b + weight_c * in_tri.c.col.b);
 	end
 
 endmodule
