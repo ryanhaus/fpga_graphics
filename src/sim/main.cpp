@@ -105,9 +105,9 @@ int main() {
 		top,
 		m_trace,
 		create_tri(
-			create_point(160, 20, 2, rgb(1.0, 0.0, 0.0)),
-			create_point(300, 220, 2, rgb(0.0, 1.0, 0.0)),
-			create_point(20, 220, 2, rgb(0.0, 0.0, 1.0))
+			create_point(0, -100, 2, rgb(1.0, 0.0, 0.0)),
+			create_point(100, 100, 2, rgb(0.0, 1.0, 0.0)),
+			create_point(-100, 100, 2, rgb(0.0, 0.0, 1.0))
 		),
 		0
 	);
@@ -116,9 +116,9 @@ int main() {
 		top,
 		m_trace,
 		create_tri(
-			create_point(160, 20, 2, rgb(1.0, 0.0, 0.0)),
-			create_point(300, 20, 2, rgb(1.0, 1.0, 0.0)),
-			create_point(300, 220, 2, rgb(0.0, 1.0, 0.0))
+			create_point(0, -100, 2, rgb(1.0, 0.0, 0.0)),
+			create_point(100, -100, 2, rgb(1.0, 1.0, 0.0)),
+			create_point(100, 100, 2, rgb(0.0, 1.0, 0.0))
 		),
 		1
 	);
@@ -127,9 +127,9 @@ int main() {
 		top,
 		m_trace,
 		create_tri(
-			create_point(20, 20, 2, rgb(1.0, 0.0, 1.0)),
-			create_point(160, 20, 2, rgb(1.0, 0.0, 0.0)),
-			create_point(20, 220, 2, rgb(0.0, 0.0, 1.0))
+			create_point(-100, -100, 2, rgb(1.0, 0.0, 1.0)),
+			create_point(0, -100, 2, rgb(1.0, 0.0, 0.0)),
+			create_point(-100, 100, 2, rgb(0.0, 0.0, 1.0))
 		),
 		2
 	);

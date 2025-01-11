@@ -111,6 +111,7 @@ module video_generator #(
 	bit [DIV_BITS-1 : 0] div_denominator;
 	bit [DIV_BITS-1 : 0] div_quotient;
 	bit [DIV_BITS-1 : 0] div_remainder;
+	bit div_numerator_signed;
 	bit div_start;
 	bit div_busy;
 	bit div_result_valid;
@@ -120,6 +121,7 @@ module video_generator #(
 		.rst(rst),
 		.numerator(div_numerator),
 		.denominator(div_denominator),
+		.numerator_signed(div_numerator_signed),
 		.start(div_start),
 		.busy(div_busy),
 		.quotient(div_quotient),
@@ -145,10 +147,10 @@ module video_generator #(
 	point tri_points[2:0];
 	point trans_current_pt;
 
-	integer pt_axes[1:0];
+	integer signed pt_axes[1:0];
 	integer trans_current_axis;
 
-	integer trans_tri_pt_values[2:0][1:0];
+	integer signed trans_tri_pt_values[2:0][1:0];
 	
 	always_comb begin
 		tri_points[0] = current_tri.a;
@@ -198,6 +200,7 @@ module video_generator #(
 					// setup point transformation calculation
 					div_numerator = trans_current_axis;
 					div_denominator = trans_current_pt.z;
+					div_numerator_signed = 1;
 					div_start = 1;
 
 					state = WAIT_FOR_TRANSFORMED_TRI_RESULT;
@@ -218,12 +221,12 @@ module video_generator #(
 						if (trans_pt_axis_i == 1) begin
 							// if done with current triangle
 							if (trans_pt_i == 2) begin
-								current_tri.a.x = trans_tri_pt_values[0][0];
-								current_tri.a.y = trans_tri_pt_values[0][1];
-								current_tri.b.x = trans_tri_pt_values[1][0];
-								current_tri.b.y = trans_tri_pt_values[1][1];
-								current_tri.c.x = trans_tri_pt_values[2][0];
-								current_tri.c.y = trans_tri_pt_values[2][1];
+								current_tri.a.x = trans_tri_pt_values[0][0] + DISPLAY_WIDTH / 2;
+								current_tri.a.y = trans_tri_pt_values[0][1] + DISPLAY_HEIGHT / 2;
+								current_tri.b.x = trans_tri_pt_values[1][0] + DISPLAY_WIDTH / 2;
+								current_tri.b.y = trans_tri_pt_values[1][1] + DISPLAY_HEIGHT / 2;
+								current_tri.c.x = trans_tri_pt_values[2][0] + DISPLAY_WIDTH / 2;
+								current_tri.c.y = trans_tri_pt_values[2][1] + DISPLAY_HEIGHT / 2;
 
 								state = COMPUTE_INVERSE_EDGE_FN;
 							end
@@ -245,6 +248,7 @@ module video_generator #(
 					// the rest fractional bits
 					div_numerator = 1 << (DIV_BITS - 1);
 					div_denominator = tri_edge_fn;
+					div_numerator_signed = 0;
 					div_start = 1;
 
 					state = WAIT_FOR_INVERSE_EDGE_FN_RESULT;
