@@ -19,7 +19,7 @@ struct pixel {
 void verilator_tick(Vtop* top, VerilatedFstC* m_trace) {
 	static uint64_t time_ps = 0;
 	top->eval();
-	m_trace->dump(time_ps++);
+	// m_trace->dump(time_ps++);
 }
 
 void write_tri_to_vram(Vtop* top, VerilatedFstC* m_trace, triangle tri, int vram_addr) {
@@ -105,9 +105,9 @@ int main() {
 		top,
 		m_trace,
 		create_tri(
-			create_point(160, 20, rgb(1.0, 0.0, 0.0)),
-			create_point(300, 220, rgb(0.0, 1.0, 0.0)),
-			create_point(20, 220, rgb(0.0, 0.0, 1.0))
+			create_point(160, 20, 2, rgb(1.0, 0.0, 0.0)),
+			create_point(300, 220, 2, rgb(0.0, 1.0, 0.0)),
+			create_point(20, 220, 2, rgb(0.0, 0.0, 1.0))
 		),
 		0
 	);
@@ -116,9 +116,9 @@ int main() {
 		top,
 		m_trace,
 		create_tri(
-			create_point(160, 20, rgb(1.0, 0.0, 0.0)),
-			create_point(300, 20, rgb(1.0, 1.0, 0.0)),
-			create_point(300, 220, rgb(0.0, 1.0, 0.0))
+			create_point(160, 20, 2, rgb(1.0, 0.0, 0.0)),
+			create_point(300, 20, 2, rgb(1.0, 1.0, 0.0)),
+			create_point(300, 220, 2, rgb(0.0, 1.0, 0.0))
 		),
 		1
 	);
@@ -127,9 +127,9 @@ int main() {
 		top,
 		m_trace,
 		create_tri(
-			create_point(20, 20, rgb(1.0, 0.0, 1.0)),
-			create_point(160, 20, rgb(1.0, 0.0, 0.0)),
-			create_point(20, 220, rgb(0.0, 0.0, 1.0))
+			create_point(20, 20, 2, rgb(1.0, 0.0, 1.0)),
+			create_point(160, 20, 2, rgb(1.0, 0.0, 0.0)),
+			create_point(20, 220, 2, rgb(0.0, 0.0, 1.0))
 		),
 		2
 	);

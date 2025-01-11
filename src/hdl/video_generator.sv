@@ -5,8 +5,10 @@
 typedef enum {
 	LOAD_TRIANGLE,
 	UPDATE_COUNTER_RANGE,
+	COMPUTE_TRANSFORMED_TRIANGLE,
+	WAIT_FOR_TRANSFORMED_TRI_RESULT,
 	COMPUTE_INVERSE_EDGE_FN,
-	WAIT_FOR_DIV_RESULT,
+	WAIT_FOR_INVERSE_EDGE_FN_RESULT,
 	TEST_TRIANGLE
 } video_gen_state;
 
@@ -135,6 +137,29 @@ module video_generator #(
 		.out_col(out_color)
 	);
 
+	// used in the transformation calculation states
+	integer trans_pt_i; // current point in the COMPUTE_TRANSFORMED_TRIANGLE state (i.e., a, b, or c)
+	integer trans_pt_axis_i; // current axis in the COMPUTE_TRANSFORMED_TRIANGLE state (i.e., x or y)
+
+	point tri_points[2:0];
+	point trans_current_pt;
+
+	integer pt_axes[1:0];
+	integer trans_current_axis;
+
+	integer trans_tri_pt_values[2:0][1:0];
+	
+	always_comb begin
+		tri_points[0] = current_tri.a;
+		tri_points[1] = current_tri.b;
+		tri_points[2] = current_tri.c;
+		trans_current_pt = tri_points[trans_pt_i];
+
+		pt_axes[0] = trans_current_pt.x;
+		pt_axes[1] = trans_current_pt.y;
+		trans_current_axis = pt_axes[trans_pt_axis_i];
+	end
+
 	// state handler
 	video_gen_state state;
 
@@ -158,7 +183,55 @@ module video_generator #(
 					// then increments vram_rd_addr
 					current_tri = vram_rd_data;
 					vram_rd_addr = vram_rd_addr + 1;
-					state = COMPUTE_INVERSE_EDGE_FN;
+					trans_pt_i = 0;
+					trans_pt_axis_i = 0;
+					state = COMPUTE_TRANSFORMED_TRIANGLE;
+				end
+				
+				COMPUTE_TRANSFORMED_TRIANGLE: begin
+					// setup point transformation calculation
+					div_numerator = trans_current_axis;
+					div_denominator = trans_current_pt.z;
+					div_start = 1;
+
+					state = WAIT_FOR_TRANSFORMED_TRI_RESULT;
+				end
+
+				WAIT_FOR_TRANSFORMED_TRI_RESULT: begin
+					// once the start signal has been acknowledged it can be
+					// set back to low to prevent the divider from looping
+					if (div_busy) begin
+						div_start = 0;
+					end
+
+					// once the result is valid, update values and figure
+					// out where to go next
+					if (div_result_valid) begin
+						trans_tri_pt_values[trans_pt_i][trans_pt_axis_i] = div_quotient;
+						// if done with current point
+						if (trans_pt_axis_i == 1) begin
+							// if done with current triangle
+							if (trans_pt_i == 2) begin
+								current_tri.a.x = trans_tri_pt_values[0][0];
+								current_tri.a.y = trans_tri_pt_values[0][1];
+								current_tri.b.x = trans_tri_pt_values[1][0];
+								current_tri.b.y = trans_tri_pt_values[1][1];
+								current_tri.c.x = trans_tri_pt_values[2][0];
+								current_tri.c.y = trans_tri_pt_values[2][1];
+
+								state = COMPUTE_INVERSE_EDGE_FN;
+							end
+							else begin
+								trans_pt_i = trans_pt_i + 1;
+								trans_pt_axis_i = 0;
+								state = COMPUTE_TRANSFORMED_TRIANGLE;
+							end
+						end
+						else begin
+							trans_pt_axis_i = trans_pt_axis_i + 1;
+							state = COMPUTE_TRANSFORMED_TRIANGLE;
+						end
+					end
 				end
 
 				COMPUTE_INVERSE_EDGE_FN: begin
@@ -168,10 +241,10 @@ module video_generator #(
 					div_denominator = tri_edge_fn;
 					div_start = 1;
 
-					state = WAIT_FOR_DIV_RESULT;
+					state = WAIT_FOR_INVERSE_EDGE_FN_RESULT;
 				end
 
-				WAIT_FOR_DIV_RESULT: begin
+				WAIT_FOR_INVERSE_EDGE_FN_RESULT: begin
 					// once the start signal has been acknowledged it can be
 					// set back to low to prevent the divider from looping
 					if (div_busy) begin

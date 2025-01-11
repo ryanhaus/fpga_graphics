@@ -7,6 +7,7 @@ typedef struct packed {
 typedef struct packed {
 	integer x;
 	integer y;
+	integer z;
 	color col;
 } point;
 

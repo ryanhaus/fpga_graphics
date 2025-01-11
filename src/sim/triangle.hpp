@@ -13,6 +13,7 @@ struct color {
 
 struct point {
 	color col;
+	uint32_t z;
 	uint32_t y;
 	uint32_t x;
 };
@@ -34,10 +35,11 @@ color rgb(float r, float g, float b) {
 	return col;
 }
 
-point create_point(uint32_t x, uint32_t y, color col) {
+point create_point(uint32_t x, uint32_t y, uint32_t z, color col) {
 	point pt;
 	pt.x = x;
 	pt.y = y;
+	pt.z = z;
 	pt.col = col;
 
 	return pt;
