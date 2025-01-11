@@ -3,6 +3,7 @@
 /* verilator lint_off WIDTHTRUNC */
 
 typedef enum {
+	WAIT_VRAM,
 	LOAD_TRIANGLE,
 	UPDATE_COUNTER_RANGE,
 	COMPUTE_TRANSFORMED_TRIANGLE,
@@ -165,7 +166,7 @@ module video_generator #(
 
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			state = LOAD_TRIANGLE;
+			state = WAIT_VRAM;
 			framebuffer_data = 'b0;
 			framebuffer_wr_addr = 'b0;
 			framebuffer_wr_en = 'b0;
@@ -178,6 +179,11 @@ module video_generator #(
 			framebuffer_wr_en = 'b0;
 
 			case (state)
+				WAIT_VRAM: begin
+					// dummy stage to allow VRAM read to occur on first pass
+					state = LOAD_TRIANGLE;
+				end
+
 				LOAD_TRIANGLE: begin
 					// loads the triangle at vram_rd_addr into current_tri,
 					// then increments vram_rd_addr
