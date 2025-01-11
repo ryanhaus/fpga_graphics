@@ -1,12 +1,4 @@
-function integer signed edge_fn;
-	input point a;
-	input point b;
-	input point c;
-
-	begin
-		edge_fn = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-	end
-endfunction
+`include "edge_fn.sv"
 
 module tri_point_tester (
 	input point in_point,
@@ -18,15 +10,15 @@ module tri_point_tester (
 	integer signed abp;
 	integer signed bcp;
 	integer signed cap;
-	integer signed signed_area;
+	integer signed abc;
 
 	always_comb begin
 		abp = edge_fn(in_tri.a, in_tri.b, in_point);
 		bcp = edge_fn(in_tri.b, in_tri.c, in_point);
 		cap = edge_fn(in_tri.c, in_tri.a, in_point);
-		signed_area = edge_fn(in_tri.a, in_tri.b, in_tri.c);
+		abc = edge_fn(in_tri.a, in_tri.b, in_tri.c);
 
-		point_in_tri = abp >= 0 && bcp >= 0 && cap >= 0 && signed_area > 0;
+		point_in_tri = abp >= 0 && bcp >= 0 && cap >= 0 && abc > 0;
 	end
 
 endmodule

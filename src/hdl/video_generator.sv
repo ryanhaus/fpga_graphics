@@ -5,6 +5,8 @@
 typedef enum {
 	LOAD_TRIANGLE,
 	UPDATE_COUNTER_RANGE,
+	COMPUTE_INVERSE_EDGE_FN,
+	WAIT_FOR_DIV_RESULT,
 	TEST_TRIANGLE
 } video_gen_state;
 
@@ -82,6 +84,57 @@ module video_generator #(
 		.max_y(tri_bb_max_y)
 	);
 
+	// calculate the 'weights' of each point of the triangle
+	// note that weights are stored as fixed-point numbers with 1 integer bit
+	// and 31 exponent bits
+	integer signed tri_edge_fn;
+	integer signed inverse_edge_fn;
+	integer signed weight_a;
+	integer signed weight_b;
+	integer signed weight_c;
+
+	tri_point_weight_calc weight_calc_inst (
+		.in_tri(current_tri),
+		.in_point({ display_x, display_y }),
+		.tri_edge_fn(tri_edge_fn),
+		.inverse_tri_edge_fn(inverse_edge_fn),
+		.weight_a(weight_a),
+		.weight_b(weight_b),
+		.weight_c(weight_c)
+	);
+
+	// divider for computing the inverse edge function of the current triangle
+	localparam DIV_BITS = 32;
+	bit [DIV_BITS-1 : 0] div_numerator;
+	bit [DIV_BITS-1 : 0] div_denominator;
+	bit [DIV_BITS-1 : 0] div_quotient;
+	bit [DIV_BITS-1 : 0] div_remainder;
+	bit div_start;
+	bit div_busy;
+	bit div_result_valid;
+
+	divider #(.N_BITS(DIV_BITS)) divider_inst (
+		.clk(~clk),
+		.rst(rst),
+		.numerator(div_numerator),
+		.denominator(div_denominator),
+		.start(div_start),
+		.busy(div_busy),
+		.quotient(div_quotient),
+		.remainder(div_remainder),
+		.result_valid(div_result_valid)
+	);
+
+	// generates a color based on the three weight_* values
+	color out_color;
+
+	color_gen color_gen_inst (
+		.weight_a(weight_a),
+		.weight_b(weight_b),
+		.weight_c(weight_c),
+		.out_col(out_color)
+	);
+
 	// state handler
 	video_gen_state state;
 
@@ -105,7 +158,30 @@ module video_generator #(
 					// then increments vram_rd_addr
 					current_tri = vram_rd_data;
 					vram_rd_addr = vram_rd_addr + 1;
-					state = UPDATE_COUNTER_RANGE;
+					state = COMPUTE_INVERSE_EDGE_FN;
+				end
+
+				COMPUTE_INVERSE_EDGE_FN: begin
+					// creates a fixed-point number with 1 integer bit and
+					// the rest fractional bits
+					div_numerator = 1 << (DIV_BITS - 1);
+					div_denominator = tri_edge_fn;
+					div_start = 1;
+
+					state = WAIT_FOR_DIV_RESULT;
+				end
+
+				WAIT_FOR_DIV_RESULT: begin
+					// once the start signal has been acknowledged it can be
+					// set back to low to prevent the divider from looping
+					if (div_busy) begin
+						div_start = 0;
+					end
+
+					if (div_result_valid) begin
+						inverse_edge_fn = div_quotient;
+						state = UPDATE_COUNTER_RANGE;
+					end
 				end
 
 				UPDATE_COUNTER_RANGE: begin
@@ -125,7 +201,7 @@ module video_generator #(
 				TEST_TRIANGLE: begin
 					// tests if the current point is in the triangle, if so,
 					// then write some data to the framebuffer
-					framebuffer_data = current_tri.tri_color;
+					framebuffer_data = out_color;
 					framebuffer_wr_addr = display_x + DISPLAY_WIDTH * display_y;
 					framebuffer_wr_en = point_in_tri;
 

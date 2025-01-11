@@ -127,7 +127,7 @@ int main() {
 		}
 
 		// pulse logic_clk
-		for (int i = 0; i < 1000 * 2; i++) {
+		for (int i = 0; i < 5000 * 2; i++) {
 			top->logic_clk = !top->logic_clk;
 			verilator_tick(top, m_trace);
 		}
