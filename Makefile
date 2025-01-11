@@ -10,7 +10,7 @@ bin/sim: src/*
 		-LDFLAGS $(shell sdl2-config --libs) \
 		-sv \
 		-o sim \
-		--trace \
+		--trace-fst \
 		--trace-structs \
 		--trace-max-array 500 \
 		--trace-max-width 200 \

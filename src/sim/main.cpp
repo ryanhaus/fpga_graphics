@@ -1,6 +1,6 @@
 #include <SDL2/SDL.h>
 #include <Vtop.h>
-#include <verilated_vcd_c.h>
+#include <verilated_fst_c.h>
 #include <cassert>
 #include <string.h>
 #include "triangle.hpp"
@@ -16,13 +16,13 @@ struct pixel {
 		b: 5;
 };
 
-void verilator_tick(Vtop* top, VerilatedVcdC* m_trace) {
+void verilator_tick(Vtop* top, VerilatedFstC* m_trace) {
 	static uint64_t time_ps = 0;
 	top->eval();
-	// m_trace->dump(time_ps++);
+	m_trace->dump(time_ps++);
 }
 
-void write_tri_to_vram(Vtop* top, VerilatedVcdC* m_trace, triangle tri, int vram_addr) {
+void write_tri_to_vram(Vtop* top, VerilatedFstC* m_trace, triangle tri, int vram_addr) {
 	assert(sizeof(triangle) <= sizeof(top->vram_wr_in));
 	memcpy(&top->vram_wr_in[0], &tri, sizeof(triangle));
 
@@ -84,9 +84,9 @@ int main() {
 	Vtop* top = new Vtop;
 
 	Verilated::traceEverOn(true);
-	VerilatedVcdC* m_trace = new VerilatedVcdC;
+	VerilatedFstC* m_trace = new VerilatedFstC;
 	top->trace(m_trace, 99);
-	m_trace->open("trace.vcd");
+	m_trace->open("trace.fst");
 
 	// reset cycle
 	top->logic_clk = 1;
