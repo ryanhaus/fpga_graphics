@@ -123,6 +123,17 @@ int main() {
 		1
 	);
 
+	write_tri_to_vram(
+		top,
+		m_trace,
+		create_tri(
+			create_point(20, 20, rgb(1.0, 0.0, 1.0)),
+			create_point(160, 20, rgb(1.0, 0.0, 0.0)),
+			create_point(20, 220, rgb(0.0, 0.0, 1.0))
+		),
+		2
+	);
+
 	// main loop
 	pixel framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH] = { 0 };
 
