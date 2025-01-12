@@ -3,6 +3,7 @@
 #include <verilated_fst_c.h>
 #include <cassert>
 #include <string.h>
+#include <math.h>
 #include "triangle.hpp"
 
 #define DISPLAY_WIDTH 320
@@ -19,7 +20,7 @@ struct pixel {
 void verilator_tick(Vtop* top, VerilatedFstC* m_trace) {
 	static uint64_t time_ps = 0;
 	top->eval();
-	m_trace->dump(time_ps++);
+	//m_trace->dump(time_ps++);
 }
 
 void write_tri_to_vram(Vtop* top, VerilatedFstC* m_trace, triangle tri, int vram_addr) {
@@ -99,40 +100,6 @@ int main() {
 	top->rst = 0;
 	top->logic_clk = 0;
 	verilator_tick(top, m_trace);
-	
-	// write triangles to VRAM
-	write_tri_to_vram(
-		top,
-		m_trace,
-		create_tri(
-			create_point(0, -1.0, 1.5, rgb(1.0, 0.0, 0.0)),
-			create_point(1.0, 1.0, 1.5, rgb(0.0, 1.0, 0.0)),
-			create_point(-1.0, 1.0, 1.5, rgb(0.0, 0.0, 1.0))
-		),
-		0
-	);
-
-	write_tri_to_vram(
-		top,
-		m_trace,
-		create_tri(
-			create_point(0, -1.0, 1.5, rgb(1.0, 0.0, 0.0)),
-			create_point(1.0, -1.0, 1.5, rgb(1.0, 1.0, 0.0)),
-			create_point(1.0, 1.0, 1.5, rgb(0.0, 1.0, 0.0))
-		),
-		1
-	);
-
-	write_tri_to_vram(
-		top,
-		m_trace,
-		create_tri(
-			create_point(-1.0, -1.0, 1.5, rgb(1.0, 0.0, 1.0)),
-			create_point(0, -1.0, 1.5, rgb(1.0, 0.0, 0.0)),
-			create_point(-1.0, 1.0, 1.5, rgb(0.0, 0.0, 1.0))
-		),
-		2
-	);
 
 	// main loop
 	pixel framebuffer[DISPLAY_HEIGHT][DISPLAY_WIDTH] = { 0 };
@@ -147,8 +114,54 @@ int main() {
 			}
 		}
 
+		// write triangles to VRAM
+		static float t = 0.0;
+		float tri_z = 2.5 + sin(t);
+		t += 0.05;
+
+		write_tri_to_vram(
+			top,
+			m_trace,
+			create_tri(
+				create_point(0, -1.0, tri_z, rgb(1.0, 0.0, 0.0)),
+				create_point(1.0, 1.0, tri_z, rgb(0.0, 1.0, 0.0)),
+				create_point(-1.0, 1.0, tri_z, rgb(0.0, 0.0, 1.0))
+			),
+			0
+		);
+
+		write_tri_to_vram(
+			top,
+			m_trace,
+			create_tri(
+				create_point(0, -1.0, tri_z, rgb(1.0, 0.0, 0.0)),
+				create_point(1.0, -1.0, tri_z, rgb(1.0, 1.0, 0.0)),
+				create_point(1.0, 1.0, tri_z, rgb(0.0, 1.0, 0.0))
+			),
+			1
+		);
+
+		write_tri_to_vram(
+			top,
+			m_trace,
+			create_tri(
+				create_point(-1.0, -1.0, tri_z, rgb(1.0, 0.0, 1.0)),
+				create_point(0, -1.0, tri_z, rgb(1.0, 0.0, 0.0)),
+				create_point(-1.0, 1.0, tri_z, rgb(0.0, 0.0, 1.0))
+			),
+			2
+		);
+
+		// start the frame
+		top->frame_start = 1;
+		top->logic_clk = 1;
+		verilator_tick(top, m_trace);
+		top->logic_clk = 0;
+		verilator_tick(top, m_trace);
+		top->frame_start = 0;
+
 		// pulse logic_clk
-		for (int i = 0; i < 1000 * 2; i++) {
+		while (!top->frame_done) {
 			top->logic_clk = !top->logic_clk;
 			verilator_tick(top, m_trace);
 		}

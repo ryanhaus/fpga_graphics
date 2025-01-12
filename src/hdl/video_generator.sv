@@ -3,7 +3,8 @@
 /* verilator lint_off WIDTHTRUNC */
 
 typedef enum {
-	WAIT_VRAM,
+	WAIT_FRAME_START,
+	CLEAR_FRAMEBUFFER,
 	LOAD_TRIANGLE,
 	COMPUTE_TRANSFORMED_TRIANGLE,
 	WAIT_FOR_TRANSFORMED_TRI_RESULT,
@@ -27,10 +28,14 @@ module video_generator #(
 	input rst,
 	input clk,
 
+	input frame_start,
+	output bit frame_done,
+
 	output bit [VRAM_ADDR_BITS-1 : 0] vram_rd_addr,
 	input bit [VRAM_DATA_BITS-1 : 0] vram_rd_data,
 
 	output bit framebuffer_wr_en,
+	output bit framebuffer_rst,
 	output bit [FRAMEBUFFER_ADDR_BITS-1 : 0] framebuffer_wr_addr,
 	output bit [FRAMEBUFFER_DATA_BITS-1 : 0] framebuffer_data
 );
@@ -170,7 +175,7 @@ module video_generator #(
 
 	always_ff @(posedge clk) begin
 		if (rst) begin
-			state = WAIT_VRAM;
+			state = WAIT_FRAME_START;
 			framebuffer_data = 'b0;
 			framebuffer_wr_addr = 'b0;
 			framebuffer_wr_en = 'b0;
@@ -183,8 +188,17 @@ module video_generator #(
 			framebuffer_wr_en = 'b0;
 
 			case (state)
-				WAIT_VRAM: begin
-					// dummy stage to allow VRAM read to occur on first pass
+				WAIT_FRAME_START: begin
+					// wait until frame_start is 1
+					if (frame_start == 1) begin
+						state = CLEAR_FRAMEBUFFER;
+					end
+				end
+
+				CLEAR_FRAMEBUFFER: begin
+					// sets framebuffer_rst high until UPDATE_COUNTER_RANGE
+					framebuffer_rst = 1;
+					frame_done = 0;
 					state = LOAD_TRIANGLE;
 				end
 
@@ -298,6 +312,9 @@ module video_generator #(
 					// also reset the counter
 					counter_rst = 'b1;
 
+					// also set framebuffer_rst low
+					framebuffer_rst = 0;
+
 					state = TEST_TRIANGLE;
 				end
 
@@ -308,8 +325,14 @@ module video_generator #(
 					framebuffer_wr_addr = current_point_int.x + DISPLAY_WIDTH * current_point_int.y;
 					framebuffer_wr_en = point_in_tri;
 
-					// move onto the next triangle in memory once finished
-					if (counter_done) begin
+					// move onto the next triangle in memory once finished,
+					// unless this is the last triangle, in which case set
+					// frame_done high and go to WAIT_FRAME_START
+					if (vram_rd_addr == VRAM_SIZE - 1) begin
+						frame_done = 1;
+						state = WAIT_FRAME_START;
+					end
+					else if (counter_done) begin
 						state = LOAD_TRIANGLE;
 					end
 				end
