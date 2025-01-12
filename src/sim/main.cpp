@@ -19,12 +19,12 @@ struct pixel {
 void verilator_tick(Vtop* top, VerilatedFstC* m_trace) {
 	static uint64_t time_ps = 0;
 	top->eval();
-	// m_trace->dump(time_ps++);
+	m_trace->dump(time_ps++);
 }
 
 void write_tri_to_vram(Vtop* top, VerilatedFstC* m_trace, triangle tri, int vram_addr) {
-	assert(sizeof(triangle) <= sizeof(top->vram_wr_in));
-	memcpy(&top->vram_wr_in[0], &tri, sizeof(triangle));
+	assert(sizeof(triangle) <= sizeof(top->vram_wr_in_padded));
+	memcpy(&top->vram_wr_in_padded[0], &tri, sizeof(triangle));
 
 	top->vram_wr_addr = vram_addr;
 	top->vram_wr_clk = 0;
@@ -105,9 +105,9 @@ int main() {
 		top,
 		m_trace,
 		create_tri(
-			create_point(0, -100, 2, rgb(1.0, 0.0, 0.0)),
-			create_point(100, 100, 2, rgb(0.0, 1.0, 0.0)),
-			create_point(-100, 100, 2, rgb(0.0, 0.0, 1.0))
+			create_point(0, -1.0, 1.5, rgb(1.0, 0.0, 0.0)),
+			create_point(1.0, 1.0, 1.5, rgb(0.0, 1.0, 0.0)),
+			create_point(-1.0, 1.0, 1.5, rgb(0.0, 0.0, 1.0))
 		),
 		0
 	);
@@ -116,9 +116,9 @@ int main() {
 		top,
 		m_trace,
 		create_tri(
-			create_point(0, -100, 2, rgb(1.0, 0.0, 0.0)),
-			create_point(100, -100, 2, rgb(1.0, 1.0, 0.0)),
-			create_point(100, 100, 2, rgb(0.0, 1.0, 0.0))
+			create_point(0, -1.0, 1.5, rgb(1.0, 0.0, 0.0)),
+			create_point(1.0, -1.0, 1.5, rgb(1.0, 1.0, 0.0)),
+			create_point(1.0, 1.0, 1.5, rgb(0.0, 1.0, 0.0))
 		),
 		1
 	);
@@ -127,9 +127,9 @@ int main() {
 		top,
 		m_trace,
 		create_tri(
-			create_point(-100, -100, 2, rgb(1.0, 0.0, 1.0)),
-			create_point(0, -100, 2, rgb(1.0, 0.0, 0.0)),
-			create_point(-100, 100, 2, rgb(0.0, 0.0, 1.0))
+			create_point(-1.0, -1.0, 1.5, rgb(1.0, 0.0, 1.0)),
+			create_point(0, -1.0, 1.5, rgb(1.0, 0.0, 0.0)),
+			create_point(-1.0, 1.0, 1.5, rgb(0.0, 0.0, 1.0))
 		),
 		2
 	);

@@ -1,8 +1,8 @@
 `include "edge_fn.sv"
 
 module tri_point_weight_calc (
-	input triangle in_tri,
-	input point in_point,
+	input int_triangle in_tri,
+	input int_point in_point,
 
 	output integer tri_edge_fn,
 	input integer inverse_tri_edge_fn, // must be calculated to be a fixed-point value equivalent to 1 / (tri_edge_fn)

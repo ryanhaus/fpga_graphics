@@ -1,8 +1,8 @@
 `include "edge_fn.sv"
 
 module tri_point_tester (
-	input point in_point,
-	input triangle in_tri,
+	input int_point in_point,
+	input int_triangle in_tri,
 	output bit point_in_tri
 );
 

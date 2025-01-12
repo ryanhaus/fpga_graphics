@@ -1,5 +1,5 @@
 module color_gen (
-	input triangle in_tri,
+	input int_triangle in_tri,
 	input integer weight_a,
 	input integer weight_b,
 	input integer weight_c,

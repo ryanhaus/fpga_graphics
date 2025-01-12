@@ -23,3 +23,4 @@ lint:
 
 clean:
 	rm -rf bin
+	rm trace.*

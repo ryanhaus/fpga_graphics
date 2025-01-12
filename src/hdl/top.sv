@@ -23,8 +23,15 @@ module top(
 	input vram_wr_clk,
 	input vram_wr_en,
 	input [`VRAM_ADDR_BITS-1 : 0] vram_wr_addr,
-	input [`VRAM_DATA_BITS-1 : 0] vram_wr_in
+	input padded_triangle vram_wr_in_padded
 );
+
+	// unpad the input
+	triangle vram_wr_in;
+
+	always_comb begin
+		vram_wr_in = unpad_tri(vram_wr_in_padded);
+	end
 
 	// framebuffer memory (direct video output)
 	bit framebuffer_wr_en;

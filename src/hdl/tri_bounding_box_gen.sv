@@ -20,7 +20,7 @@ module tri_bounding_box_gen #(
 	parameter DISPLAY_WIDTH = 100,
 	parameter DISPLAY_HEIGHT = 100
 ) (
-	input triangle in_tri,
+	input int_triangle in_tri,
 	output integer min_x,
 	output integer min_y,
 	output integer max_x,

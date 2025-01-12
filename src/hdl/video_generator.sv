@@ -5,11 +5,11 @@
 typedef enum {
 	WAIT_VRAM,
 	LOAD_TRIANGLE,
-	UPDATE_COUNTER_RANGE,
 	COMPUTE_TRANSFORMED_TRIANGLE,
 	WAIT_FOR_TRANSFORMED_TRI_RESULT,
 	COMPUTE_INVERSE_EDGE_FN,
 	WAIT_FOR_INVERSE_EDGE_FN_RESULT,
+	UPDATE_COUNTER_RANGE,
 	TEST_TRIANGLE
 } video_gen_state;
 
@@ -21,7 +21,8 @@ module video_generator #(
 	parameter VRAM_ADDR_BITS = $clog2(VRAM_SIZE),
 	parameter FRAMEBUFFER_DATA_BITS = 16,
 	parameter FRAMEBUFFER_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT,
-	parameter FRAMEBUFFER_ADDR_BITS = $clog2(FRAMEBUFFER_SIZE)
+	parameter FRAMEBUFFER_ADDR_BITS = $clog2(FRAMEBUFFER_SIZE),
+	parameter Z_SCALER = 2**12
 ) (
 	input rst,
 	input clk,
@@ -34,8 +35,9 @@ module video_generator #(
 	output bit [FRAMEBUFFER_DATA_BITS-1 : 0] framebuffer_data
 );
 
-	triangle current_tri;
-	point current_point;
+	triangle current_tri; // current triangle, as read directly from VRAM
+	int_triangle current_tri_int; // current triangle after integer transform
+	int_point current_point_int; // current point (integer since represents a pixel)
 
 	// handle going through each pixel in the display
 	bit counter_rst;
@@ -54,8 +56,8 @@ module video_generator #(
 		.y_start(counter_y_start),
 		.x_end(counter_x_end),
 		.y_end(counter_y_end),
-		.out_x(current_point.x),
-		.out_y(current_point.y),
+		.out_x(current_point_int.x),
+		.out_y(current_point_int.y),
 		.done(counter_done)
 	);
 
@@ -64,8 +66,8 @@ module video_generator #(
 	bit point_in_tri;
 
 	tri_point_tester tri_tester (
-		.in_point(current_point),
-		.in_tri(current_tri),
+		.in_point(current_point_int),
+		.in_tri(current_tri_int),
 		.point_in_tri(point_in_tri)
 	);
 
@@ -79,7 +81,7 @@ module video_generator #(
 		.DISPLAY_WIDTH(DISPLAY_WIDTH),
 		.DISPLAY_HEIGHT(DISPLAY_HEIGHT)
 	) tri_bound_box_gen (
-		.in_tri(current_tri),
+		.in_tri(current_tri_int),
 		.min_x(tri_bb_min_x),
 		.min_y(tri_bb_min_y),
 		.max_x(tri_bb_max_x),
@@ -96,8 +98,8 @@ module video_generator #(
 	integer signed weight_c;
 
 	tri_point_weight_calc weight_calc_inst (
-		.in_tri(current_tri),
-		.in_point(current_point),
+		.in_tri(current_tri_int),
+		.in_point(current_point_int),
 		.tri_edge_fn(tri_edge_fn),
 		.inverse_tri_edge_fn(inverse_edge_fn),
 		.weight_a(weight_a),
@@ -133,7 +135,7 @@ module video_generator #(
 	color out_color;
 
 	color_gen color_gen_inst (
-		.in_tri(current_tri),
+		.in_tri(current_tri_int),
 		.weight_a(weight_a),
 		.weight_b(weight_b),
 		.weight_c(weight_c),
@@ -144,8 +146,8 @@ module video_generator #(
 	integer trans_pt_i; // current point in the COMPUTE_TRANSFORMED_TRIANGLE state (i.e., a, b, or c)
 	integer trans_pt_axis_i; // current axis in the COMPUTE_TRANSFORMED_TRIANGLE state (i.e., x or y)
 
-	point tri_points[2:0];
-	point trans_current_pt;
+	int_point tri_points[2:0];
+	int_point trans_current_pt;
 
 	integer signed pt_axes[1:0];
 	integer trans_current_axis;
@@ -153,9 +155,9 @@ module video_generator #(
 	integer signed trans_tri_pt_values[2:0][1:0];
 	
 	always_comb begin
-		tri_points[0] = current_tri.a;
-		tri_points[1] = current_tri.b;
-		tri_points[2] = current_tri.c;
+		tri_points[0] = current_tri_int.a;
+		tri_points[1] = current_tri_int.b;
+		tri_points[2] = current_tri_int.c;
 		trans_current_pt = tri_points[trans_pt_i];
 
 		pt_axes[0] = trans_current_pt.x;
@@ -193,12 +195,30 @@ module video_generator #(
 					vram_rd_addr = vram_rd_addr + 1;
 					trans_pt_i = 0;
 					trans_pt_axis_i = 0;
+
+					// also convert the triangle into its integer form, as it
+					// now contains points that are fixed-point numbers
+					current_tri_int.a.x = ($signed(current_tri.a.x) * DISPLAY_WIDTH) / 2**12;
+					current_tri_int.a.y = ($signed(current_tri.a.y) * DISPLAY_HEIGHT) / 2**12;
+					current_tri_int.a.z = ($signed(current_tri.a.z) * Z_SCALER) / 2**12;
+					current_tri_int.a.col = current_tri.a.col;
+
+					current_tri_int.b.x = ($signed(current_tri.b.x) * DISPLAY_WIDTH) / 2**12;
+					current_tri_int.b.y = ($signed(current_tri.b.y) * DISPLAY_HEIGHT) / 2**12;
+					current_tri_int.b.z = ($signed(current_tri.b.z) * Z_SCALER) / 2**12;
+					current_tri_int.b.col = current_tri.b.col;
+
+					current_tri_int.c.x = ($signed(current_tri.c.x) * DISPLAY_WIDTH) / 2**12;
+					current_tri_int.c.y = ($signed(current_tri.c.y) * DISPLAY_HEIGHT) / 2**12;
+					current_tri_int.c.z = ($signed(current_tri.c.z) * Z_SCALER) / 2**12;
+					current_tri_int.c.col = current_tri.c.col;
+
 					state = COMPUTE_TRANSFORMED_TRIANGLE;
 				end
 				
 				COMPUTE_TRANSFORMED_TRIANGLE: begin
 					// setup point transformation calculation
-					div_numerator = trans_current_axis;
+					div_numerator = trans_current_axis * Z_SCALER / 2;
 					div_denominator = trans_current_pt.z;
 					div_numerator_signed = 1;
 					div_start = 1;
@@ -221,12 +241,12 @@ module video_generator #(
 						if (trans_pt_axis_i == 1) begin
 							// if done with current triangle
 							if (trans_pt_i == 2) begin
-								current_tri.a.x = trans_tri_pt_values[0][0] + DISPLAY_WIDTH / 2;
-								current_tri.a.y = trans_tri_pt_values[0][1] + DISPLAY_HEIGHT / 2;
-								current_tri.b.x = trans_tri_pt_values[1][0] + DISPLAY_WIDTH / 2;
-								current_tri.b.y = trans_tri_pt_values[1][1] + DISPLAY_HEIGHT / 2;
-								current_tri.c.x = trans_tri_pt_values[2][0] + DISPLAY_WIDTH / 2;
-								current_tri.c.y = trans_tri_pt_values[2][1] + DISPLAY_HEIGHT / 2;
+								current_tri_int.a.x = trans_tri_pt_values[0][0] + DISPLAY_WIDTH / 2;
+								current_tri_int.a.y = trans_tri_pt_values[0][1] + DISPLAY_HEIGHT / 2;
+								current_tri_int.b.x = trans_tri_pt_values[1][0] + DISPLAY_WIDTH / 2;
+								current_tri_int.b.y = trans_tri_pt_values[1][1] + DISPLAY_HEIGHT / 2;
+								current_tri_int.c.x = trans_tri_pt_values[2][0] + DISPLAY_WIDTH / 2;
+								current_tri_int.c.y = trans_tri_pt_values[2][1] + DISPLAY_HEIGHT / 2;
 
 								state = COMPUTE_INVERSE_EDGE_FN;
 							end
@@ -285,7 +305,7 @@ module video_generator #(
 					// tests if the current point is in the triangle, if so,
 					// then write some data to the framebuffer
 					framebuffer_data = out_color;
-					framebuffer_wr_addr = current_point.x + DISPLAY_WIDTH * current_point.y;
+					framebuffer_wr_addr = current_point_int.x + DISPLAY_WIDTH * current_point_int.y;
 					framebuffer_wr_en = point_in_tri;
 
 					// move onto the next triangle in memory once finished
