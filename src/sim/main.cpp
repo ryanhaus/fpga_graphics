@@ -4,6 +4,7 @@
 #include <cassert>
 #include <string.h>
 #include <math.h>
+#include <stdio.h>
 #include "triangle.hpp"
 
 #define DISPLAY_WIDTH 320
@@ -119,7 +120,7 @@ int main() {
 		float tri_z_l = 3.0 + sin(t);
 		float tri_z_r = 3.0 + cos(t);
 		float tri_z_m = (tri_z_l + tri_z_r) / 2.0;
-		t += 0.05;
+		t += 0.1;
 
 		write_tri_to_vram(
 			top,
@@ -162,11 +163,30 @@ int main() {
 		verilator_tick(top, m_trace);
 		top->frame_start = 0;
 
-		// pulse logic_clk
-		while (!top->frame_done) {
-			top->logic_clk = !top->logic_clk;
+		// pulse logic_clk until the frame generation has started
+		uint64_t tick_count = 0;
+		while (top->frame_done) {
+			top->logic_clk = 0;
 			verilator_tick(top, m_trace);
+
+			top->logic_clk = 1;
+			verilator_tick(top, m_trace);
+
+			tick_count++;
 		}
+
+		// pulse logic_clk until the frame is done
+		while (!top->frame_done) {
+			top->logic_clk = 0;
+			verilator_tick(top, m_trace);
+
+			top->logic_clk = 1;
+			verilator_tick(top, m_trace);
+
+			tick_count++;
+		}
+
+		printf("Frame completed in %lu clock cycles\n", tick_count);
 
 		// update framebuffer
 		for (int y = 0; y < DISPLAY_HEIGHT; y++) {
