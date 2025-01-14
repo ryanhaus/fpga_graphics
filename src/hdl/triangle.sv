@@ -5,8 +5,8 @@ typedef struct packed {
 } color;
 
 typedef struct packed {
-	reg [7:0] int_bits;
-	reg [11:0] frac_bits;
+	bit [7:0] int_bits;
+	bit [11:0] frac_bits;
 } fixed_point_8_12;
 
 typedef fixed_point_8_12 point_val_t;

@@ -4,6 +4,7 @@
 `define VRAM_SIZE 256
 `define VRAM_DATA_BITS $bits(triangle)
 `define VRAM_ADDR_BITS $clog2(`VRAM_SIZE)
+`define ZBUFFER_DATA_BITS $bits(point_val_t)
 
 `include "triangle.sv"
 
@@ -41,7 +42,7 @@ module top(
 	bit [framebuffer_ram.ADDR_BITS-1 : 0] framebuffer_wr_addr;
 	bit [framebuffer_ram.DATA_WIDTH-1 : 0] framebuffer_wr_in;
 
-	dpram #(.DATA_WIDTH(16), .DATA_N(320 * 240)) framebuffer_ram (
+	dpram #(.DATA_WIDTH(16), .DATA_N(`DISPLAY_WIDTH * `DISPLAY_HEIGHT)) framebuffer_ram (
 		.rst(rst | framebuffer_rst),
 		.rd_clk(display_out_clk),
 		.rd_addr(x_in + `DISPLAY_WIDTH * y_in),
@@ -67,7 +68,29 @@ module top(
 		.wr_in(vram_wr_in)
 	);
 
-	// generates video based on VRAM and writes to framebuffer
+	// z buffer (holds z value of every pixel for comparision)
+	bit [zbuffer_ram.ADDR_BITS-1 : 0] zbuffer_rd_addr;
+	bit [zbuffer_ram.DATA_WIDTH-1 : 0] zbuffer_rd_out;
+	bit [zbuffer_ram.ADDR_BITS-1 : 0] zbuffer_wr_addr;
+	bit [zbuffer_ram.DATA_WIDTH-1 : 0] zbuffer_wr_in;
+	bit zbuffer_wr_en;
+	
+	dpram #(
+		.DATA_WIDTH(`ZBUFFER_DATA_BITS),
+		.DATA_N(`DISPLAY_WIDTH * `DISPLAY_HEIGHT),
+		.RST_VAL(20'hFFFFF)
+	) zbuffer_ram (
+		.rst(rst | framebuffer_rst),
+		.rd_clk(logic_clk),
+		.rd_addr(zbuffer_rd_addr),
+		.rd_out(zbuffer_rd_out),
+		.wr_clk(logic_clk),
+		.wr_en(zbuffer_wr_en),
+		.wr_addr(zbuffer_wr_addr),
+		.wr_in(zbuffer_wr_in)
+	);
+
+	// generates video based on VRAM and writes to framebuffer and zbuffer
 	video_generator #(
 		.DISPLAY_WIDTH(`DISPLAY_WIDTH),
 		.DISPLAY_HEIGHT(`DISPLAY_HEIGHT),
@@ -83,7 +106,12 @@ module top(
 		.framebuffer_wr_en(framebuffer_wr_en),
 		.framebuffer_rst(framebuffer_rst),
 		.framebuffer_wr_addr(framebuffer_wr_addr),
-		.framebuffer_data(framebuffer_wr_in)
+		.framebuffer_data(framebuffer_wr_in),
+		.zbuffer_rd_addr(zbuffer_rd_addr),
+		.zbuffer_rd_data(zbuffer_rd_out),
+		.zbuffer_wr_addr(zbuffer_wr_addr),
+		.zbuffer_wr_data(zbuffer_wr_in),
+		.zbuffer_wr_en(zbuffer_wr_en)
 	);
 
 endmodule

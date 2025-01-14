@@ -23,21 +23,33 @@ module video_generator #(
 	parameter FRAMEBUFFER_DATA_BITS = 16,
 	parameter FRAMEBUFFER_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT,
 	parameter FRAMEBUFFER_ADDR_BITS = $clog2(FRAMEBUFFER_SIZE),
-	parameter Z_SCALER = 2**12
+	parameter Z_SCALER = 2**12,
+	parameter ZBUFFER_ADDR_BITS = FRAMEBUFFER_ADDR_BITS,
+	parameter ZBUFFER_DATA_BITS = $bits(point_val_t)
 ) (
 	input rst,
 	input clk,
 
+	// control signals
 	input frame_start,
 	output bit frame_done,
 
+	// VRAM interface
 	output bit [VRAM_ADDR_BITS-1 : 0] vram_rd_addr,
 	input bit [VRAM_DATA_BITS-1 : 0] vram_rd_data,
 
+	// framebuffer interface
 	output bit framebuffer_wr_en,
 	output bit framebuffer_rst,
 	output bit [FRAMEBUFFER_ADDR_BITS-1 : 0] framebuffer_wr_addr,
-	output bit [FRAMEBUFFER_DATA_BITS-1 : 0] framebuffer_data
+	output bit [FRAMEBUFFER_DATA_BITS-1 : 0] framebuffer_data,
+
+	// z buffer interface
+	output bit [ZBUFFER_ADDR_BITS-1 : 0] zbuffer_rd_addr,
+	input bit [ZBUFFER_DATA_BITS-1 : 0] zbuffer_rd_data,
+	output bit [ZBUFFER_ADDR_BITS-1 : 0] zbuffer_wr_addr,
+	output bit [ZBUFFER_DATA_BITS-1 : 0] zbuffer_wr_data,
+	output bit zbuffer_wr_en
 );
 
 	triangle current_tri; // current triangle, as read directly from VRAM
@@ -147,6 +159,17 @@ module video_generator #(
 		.out_col(out_color)
 	);
 
+	// generates a z value based on the three weight_* values
+	point_val_t z_val;
+
+	z_gen z_gen_inst (
+		.in_tri(current_tri),
+		.weight_a(weight_a),
+		.weight_b(weight_b),
+		.weight_c(weight_c),
+		.z_val(z_val)
+	);
+
 	// used in the transformation calculation states
 	integer trans_pt_i; // current point in the COMPUTE_TRANSFORMED_TRIANGLE state (i.e., a, b, or c)
 	integer trans_pt_axis_i; // current axis in the COMPUTE_TRANSFORMED_TRIANGLE state (i.e., x or y)
@@ -186,6 +209,7 @@ module video_generator #(
 			counter_rst = 'b0;
 			framebuffer_data = 'b0;
 			framebuffer_wr_en = 'b0;
+			zbuffer_wr_en = 0;
 
 			case (state)
 				WAIT_FRAME_START: begin
@@ -319,8 +343,11 @@ module video_generator #(
 				end
 
 				TEST_TRIANGLE: begin
-					// tests if the current point is in the triangle, if so,
-					// then write some data to the framebuffer
+					// tests if the current point is in the triangle, and if
+					// it is, and the z value is < the current z buffer value,
+					// then re-write the z buffer value and write the pixel to
+					// the framebuffer
+					zbuffer_rd_addr = current_point_int.x + DISPLAY_WIDTH * current_point_int.y;
 					framebuffer_data = out_color;
 					framebuffer_wr_addr = current_point_int.x + DISPLAY_WIDTH * current_point_int.y;
 					framebuffer_wr_en = point_in_tri;
