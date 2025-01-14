@@ -155,6 +155,17 @@ int main() {
 			2
 		);
 
+		write_tri_to_vram(
+			top,
+			m_trace,
+			create_tri(
+				create_point(-1.0, -1.0, 3.5, rgb(1.0, 1.0, 1.0)),
+				create_point(1.0, 1.0, 3.5, rgb(0.8, 0.8, 0.8)),
+				create_point(-1.0, 1.0, 3.5, rgb(0.5, 0.5, 0.5))
+			),
+			3
+		);
+
 		// start the frame
 		top->frame_start = 1;
 		top->logic_clk = 1;

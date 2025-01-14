@@ -10,7 +10,7 @@ typedef enum {
 	WAIT_FOR_TRANSFORMED_TRI_RESULT,
 	COMPUTE_INVERSE_EDGE_FN,
 	WAIT_FOR_INVERSE_EDGE_FN_RESULT,
-	UPDATE_COUNTER_RANGE,
+	PREPARE_FOR_TEST_TRIANGLE,
 	TEST_TRIANGLE
 } video_gen_state;
 
@@ -55,10 +55,12 @@ module video_generator #(
 	triangle current_tri; // current triangle, as read directly from VRAM
 	int_triangle current_tri_int; // current triangle after integer transform
 	int_point current_point_int; // current point (integer since represents a pixel)
+	int_point current_point_int_next; // the next value of current_point_int
 
 	// handle going through each pixel in the display
 	bit counter_rst;
 	bit counter_done;
+	bit counter_done_next; // counter_done is buffered by 1 cycle
 
 	integer counter_x_start;
 	integer counter_y_start;
@@ -73,9 +75,9 @@ module video_generator #(
 		.y_start(counter_y_start),
 		.x_end(counter_x_end),
 		.y_end(counter_y_end),
-		.out_x(current_point_int.x),
-		.out_y(current_point_int.y),
-		.done(counter_done)
+		.out_x(current_point_int_next.x),
+		.out_y(current_point_int_next.y),
+		.done(counter_done_next)
 	);
 
 	// test if the current point is in the current triangle
@@ -321,23 +323,32 @@ module video_generator #(
 
 					if (div_result_valid) begin
 						inverse_edge_fn = div_quotient;
-						state = UPDATE_COUNTER_RANGE;
+						state = PREPARE_FOR_TEST_TRIANGLE;
 					end
 				end
 
-				UPDATE_COUNTER_RANGE: begin
-					// updates the range of the counter_2d instance to match
+				PREPARE_FOR_TEST_TRIANGLE: begin
+					// this stage just sets everything up for TEST_TRIANGLE
+
+					// update the range of the counter_2d instance to match
 					// the bounding box of the current triangle
 					counter_x_start = tri_bb_min_x;
 					counter_y_start = tri_bb_min_y;
 					counter_x_end = tri_bb_max_x;
 					counter_y_end = tri_bb_max_y;
 
-					// also reset the counter
+					// reset the counter
 					counter_rst = 'b1;
 
-					// also set framebuffer_rst low
+					// set framebuffer_rst low
 					framebuffer_rst = 0;
+
+					// set up the first read from zbuffer ram
+					zbuffer_rd_addr = current_point_int_next.x + DISPLAY_WIDTH * current_point_int_next.y;
+
+					// initial values of buffered values
+					current_point_int = current_point_int_next;
+					counter_done = 0;
 
 					state = TEST_TRIANGLE;
 				end
@@ -347,10 +358,18 @@ module video_generator #(
 					// it is, and the z value is < the current z buffer value,
 					// then re-write the z buffer value and write the pixel to
 					// the framebuffer
-					zbuffer_rd_addr = current_point_int.x + DISPLAY_WIDTH * current_point_int.y;
-					framebuffer_data = out_color;
-					framebuffer_wr_addr = current_point_int.x + DISPLAY_WIDTH * current_point_int.y;
-					framebuffer_wr_en = point_in_tri;
+					if (point_in_tri && z_val < zbuffer_rd_data) begin
+						framebuffer_data = out_color;
+						framebuffer_wr_addr = current_point_int.x + DISPLAY_WIDTH * current_point_int.y;
+						framebuffer_wr_en = 1;
+
+						zbuffer_wr_data = z_val;
+						zbuffer_wr_addr = framebuffer_wr_addr;
+						zbuffer_wr_en = 1;
+					end
+
+					// set up the z buffer read for the NEXT cycle
+					zbuffer_rd_addr = current_point_int_next.x + DISPLAY_WIDTH * current_point_int_next.y;
 
 					// move onto the next triangle in memory once finished,
 					// unless this is the last triangle, in which case set
@@ -362,10 +381,15 @@ module video_generator #(
 					else if (counter_done) begin
 						state = LOAD_TRIANGLE;
 					end
+
+					// update buffered values
+					current_point_int = current_point_int_next;
+					counter_done = counter_done_next;
 				end
 
 			endcase
 		end
+
 	end
 
 endmodule
