@@ -6,6 +6,7 @@ typedef enum {
 	WAIT_FRAME_START,
 	CLEAR_FRAMEBUFFER,
 	LOAD_TRIANGLE,
+	CHECK_TRIANGLE,
 	COMPUTE_TRANSFORMED_TRIANGLE,
 	WAIT_FOR_TRANSFORMED_TRI_RESULT,
 	COMPUTE_INVERSE_EDGE_FN,
@@ -256,7 +257,25 @@ module video_generator #(
 					current_tri_int.c.z = ($signed(current_tri.c.z) * Z_SCALER) / 2**12;
 					current_tri_int.c.col = current_tri.c.col;
 
-					state = COMPUTE_TRANSFORMED_TRIANGLE;
+					state = CHECK_TRIANGLE;
+				end
+				
+				CHECK_TRIANGLE: begin
+					// checks the edge function of the triangle, if it is <=
+					// 0 then it is either an empty triangle or is
+					// counterclockwise, so skip over it
+					if (tri_edge_fn <= 0) begin
+						if (vram_rd_addr == VRAM_SIZE - 1) begin
+							frame_done = 1;
+							state = WAIT_FRAME_START;
+						end
+						else begin
+							state = LOAD_TRIANGLE;
+						end
+					end
+					else begin
+						state = COMPUTE_TRANSFORMED_TRIANGLE;
+					end
 				end
 				
 				COMPUTE_TRANSFORMED_TRIANGLE: begin
