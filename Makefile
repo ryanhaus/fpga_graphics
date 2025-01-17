@@ -1,5 +1,6 @@
-bin/sim: src/*
+bin/sim: src/* res/*
 	mkdir -p bin
+	./src/sim/stl_convert.py
 	verilator src/hdl/top.sv \
 		-y src/hdl \
 		--Mdir bin \

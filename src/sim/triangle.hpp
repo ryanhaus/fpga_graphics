@@ -35,7 +35,7 @@ struct triangle {
 
 #pragma pack(pop)
 
-color rgb(float r, float g, float b) {
+static color rgb(float r, float g, float b) {
 	color col;
 	col.r = (uint16_t)round(r * 0b11111);
 	col.g = (uint16_t)round(g * 0b111111);
@@ -44,7 +44,7 @@ color rgb(float r, float g, float b) {
 	return col;
 }
 
-fixed_point_8_12 create_fixed_8_12(float x) {
+static fixed_point_8_12 create_fixed_8_12(float x) {
 	// splits a float into the integer and decimal parts
 	float integer, decimal;
 	decimal = modf(x, &integer);
@@ -56,7 +56,7 @@ fixed_point_8_12 create_fixed_8_12(float x) {
 	return fixed_val;
 }
 
-point create_point(float x, float y, float z, color col) {
+static point create_point(float x, float y, float z, color col) {
 	point pt;
 	pt.x = create_fixed_8_12(x);
 	pt.y = create_fixed_8_12(y);
@@ -66,7 +66,7 @@ point create_point(float x, float y, float z, color col) {
 	return pt;
 }
 
-triangle create_tri(point a, point b, point c) {
+static triangle create_tri(point a, point b, point c) {
 	triangle tri;
 	tri.a = a;
 	tri.b = b;

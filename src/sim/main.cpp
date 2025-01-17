@@ -6,6 +6,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "triangle.hpp"
+#include "model.hpp"
 
 #define DISPLAY_WIDTH 320
 #define DISPLAY_HEIGHT 240
@@ -36,6 +37,12 @@ void write_tri_to_vram(Vtop* top, VerilatedFstC* m_trace, triangle tri, int vram
 	verilator_tick(top, m_trace);
 	top->vram_wr_en = 0;
 	top->vram_wr_clk = 0;
+}
+
+void update_vram(Vtop* top, VerilatedFstC* m_trace) {
+	for (int i = 0; i < N_TRIANGLES; i++) {
+		write_tri_to_vram(top, m_trace, TRIANGLES[i], i);
+	}
 }
 
 int main() {
@@ -116,55 +123,7 @@ int main() {
 		}
 
 		// write triangles to VRAM
-		static float t = 0.0;
-		float tri_z_l = 3.0 + sin(t);
-		float tri_z_r = 3.0 + cos(t);
-		float tri_z_m = (tri_z_l + tri_z_r) / 2.0;
-		t += 0.1;
-
-		write_tri_to_vram(
-			top,
-			m_trace,
-			create_tri(
-				create_point(0, -1.0, tri_z_m, rgb(1.0, 0.0, 0.0)),
-				create_point(1.0, 1.0, tri_z_r, rgb(0.0, 1.0, 0.0)),
-				create_point(-1.0, 1.0, tri_z_l, rgb(0.0, 0.0, 1.0))
-			),
-			0
-		);
-
-		write_tri_to_vram(
-			top,
-			m_trace,
-			create_tri(
-				create_point(0.0, -1.0, tri_z_m, rgb(1.0, 0.0, 0.0)),
-				create_point(1.0, -1.0, tri_z_r, rgb(1.0, 1.0, 0.0)),
-				create_point(1.0, 1.0, tri_z_r, rgb(0.0, 1.0, 0.0))
-			),
-			1
-		);
-
-		write_tri_to_vram(
-			top,
-			m_trace,
-			create_tri(
-				create_point(-1.0, -1.0, tri_z_l, rgb(1.0, 0.0, 1.0)),
-				create_point(0, -1.0, tri_z_m, rgb(1.0, 0.0, 0.0)),
-				create_point(-1.0, 1.0, tri_z_l, rgb(0.0, 0.0, 1.0))
-			),
-			2
-		);
-
-		write_tri_to_vram(
-			top,
-			m_trace,
-			create_tri(
-				create_point(-1.0, -1.0, 3.5, rgb(1.0, 1.0, 1.0)),
-				create_point(1.0, 1.0, 3.5, rgb(0.8, 0.8, 0.8)),
-				create_point(-1.0, 1.0, 3.5, rgb(0.5, 0.5, 0.5))
-			),
-			3
-		);
+		update_vram(top, m_trace);
 
 		// start the frame
 		top->frame_start = 1;
