@@ -175,8 +175,9 @@ int main() {
 		top->frame_start = 0;
 
 		// pulse logic_clk until the frame generation has started
+		const uint64_t MAX_TICKS = 1000000; // maximum number of clock cycles per frame
 		uint64_t tick_count = 0;
-		while (top->frame_done) {
+		while (top->frame_done && tick_count < MAX_TICKS) {
 			top->logic_clk = 0;
 			verilator_tick(top, m_trace);
 
@@ -187,7 +188,7 @@ int main() {
 		}
 
 		// pulse logic_clk until the frame is done
-		while (!top->frame_done) {
+		while (!top->frame_done && tick_count < MAX_TICKS) {
 			top->logic_clk = 0;
 			verilator_tick(top, m_trace);
 
