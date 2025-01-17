@@ -359,10 +359,6 @@ module video_generator #(
 					// the z buffer
 					point_is_visible = point_in_tri && (z_val < zbuffer_rd_data);
 
-					state = WRITE_BUFFERS;
-				end
-
-				WRITE_BUFFERS: begin
 					// if the point is visible, then the new computed z value
 					// should be written to the z buffer
 					if (point_is_visible) begin
@@ -388,7 +384,6 @@ module video_generator #(
 						state = UPDATE_ZBUFFER_RD_ADDR;
 					end
 				end
-
 			endcase
 		end
 	end
