@@ -22,14 +22,14 @@ module counter_2d #(
 );
 
 	always_ff @(posedge clk) begin
-		done = 'b0;
-
 		if (rst) begin
 			// reset all values back to 0
+			done = 'b0;
 			out_x = x_start;
 			out_y = y_start;
 		end
 		else if (enable) begin
+			done = 'b0;
 			if (out_x >= x_end) begin
 				out_x = x_start;
 				
