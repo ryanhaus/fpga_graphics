@@ -4,7 +4,7 @@ import numpy
 from random import random as rand
 from stl import mesh
 
-mesh = mesh.Mesh.from_file("res/gordon_freeman.stl")
+mesh = mesh.Mesh.from_file("res/dragon_lowpoly.stl")
 triangles = zip(mesh.v0, mesh.v1, mesh.v2)
 
 header_file = ""

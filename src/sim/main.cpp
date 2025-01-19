@@ -45,7 +45,7 @@ void update_vram(Vtop* top, VerilatedFstC* m_trace) {
 	for (int i = 0; i < N_TRIANGLES; i++) {
 		triangle tri = TRIANGLES[i];
 		tri = rotate_triangle(tri, t);
-		tri = translate_triangle(tri, create_point(0.0, 0.0, 1.25));
+		tri = translate_triangle(tri, create_point(0.0, 0.0, 2.5));
 
 		write_tri_to_vram(top, m_trace, tri, i);
 	}
