@@ -261,10 +261,9 @@ module video_generator #(
 				end
 				
 				CHECK_TRIANGLE: begin
-					// checks the edge function of the triangle, if it is <=
-					// 0 then it is either an empty triangle or is
-					// counterclockwise, so skip over it
-					if (tri_edge_fn <= 0) begin
+					// checks if the triangle is empty (all 0), and if so,
+					// skips over it
+					if (current_tri == 'b0) begin
 						if (vram_rd_addr == VRAM_SIZE - 1) begin
 							frame_done = 1;
 							state = WAIT_FRAME_START;
@@ -303,12 +302,14 @@ module video_generator #(
 						if (trans_pt_axis_i == 1) begin
 							// if done with current triangle
 							if (trans_pt_i == 2) begin
+								// y values are biased negative to make
+								// positive Y be up
 								current_tri_int.a.x = trans_tri_pt_values[0][0] + DISPLAY_WIDTH / 2;
-								current_tri_int.a.y = trans_tri_pt_values[0][1] + DISPLAY_HEIGHT / 2;
+								current_tri_int.a.y = -trans_tri_pt_values[0][1] + DISPLAY_HEIGHT / 2;
 								current_tri_int.b.x = trans_tri_pt_values[1][0] + DISPLAY_WIDTH / 2;
-								current_tri_int.b.y = trans_tri_pt_values[1][1] + DISPLAY_HEIGHT / 2;
+								current_tri_int.b.y = -trans_tri_pt_values[1][1] + DISPLAY_HEIGHT / 2;
 								current_tri_int.c.x = trans_tri_pt_values[2][0] + DISPLAY_WIDTH / 2;
-								current_tri_int.c.y = trans_tri_pt_values[2][1] + DISPLAY_HEIGHT / 2;
+								current_tri_int.c.y = -trans_tri_pt_values[2][1] + DISPLAY_HEIGHT / 2;
 
 								state = COMPUTE_INVERSE_EDGE_FN;
 							end
@@ -363,7 +364,21 @@ module video_generator #(
 					// set framebuffer_rst low
 					framebuffer_rst = 0;
 
-					state = UPDATE_ZBUFFER_RD_ADDR;
+					// also, before moving on, check the edge fn of the
+					// triangle. if it's negative, then the triangle is CCW
+					// and can be skipped
+					if (tri_edge_fn <= 0) begin
+						if (vram_rd_addr == VRAM_SIZE - 1) begin
+							frame_done = 1;
+							state = WAIT_FRAME_START;
+						end
+						else begin
+							state = LOAD_TRIANGLE;
+						end
+					end
+					else begin
+						state = UPDATE_ZBUFFER_RD_ADDR;
+					end
 				end
 
 				UPDATE_ZBUFFER_RD_ADDR: begin
