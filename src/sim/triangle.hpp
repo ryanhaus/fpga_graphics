@@ -12,9 +12,10 @@ struct color {
 };
 
 struct fixed_point_8_12 {
-	uint8_t _dummy; // to make struct 32 bits
-	uint16_t frac_bits;
-	int8_t int_bits;
+	int32_t
+		_padding: 12,
+		frac_bits: 12,
+		int_bits: 8;
 };
 
 typedef fixed_point_8_12 point_val_t;
@@ -49,14 +50,25 @@ static fixed_point_8_12 create_fixed_8_12(float x) {
 	float integer, decimal;
 	decimal = modf(x, &integer);
 
+	int32_t fixed_val_int = (int32_t)round(x * (1 << 12)) << 12;
 	fixed_point_8_12 fixed_val;
-	fixed_val.int_bits = (int8_t)integer;
-	fixed_val.frac_bits = (uint16_t)(decimal * (1 << 12)) << 4;
+
+	memcpy(&fixed_val, &fixed_val_int, sizeof(fixed_val));
 	
 	return fixed_val;
 }
 
-static point create_point(float x, float y, float z, color col) {
+static float convert_fixed_8_12(fixed_point_8_12 x) {
+	// converts a fixed_8_12 into a floating point number
+	int32_t fixed_val_int;
+	memcpy(&fixed_val_int, &x, sizeof(fixed_val_int));
+
+	float result = (float)fixed_val_int / (float)(2 << 23);
+
+	return result;
+}
+
+static point create_point(float x, float y, float z, color col = {0,0,0}) {
 	point pt;
 	pt.x = create_fixed_8_12(x);
 	pt.y = create_fixed_8_12(y);
@@ -71,6 +83,36 @@ static triangle create_tri(point a, point b, point c) {
 	tri.a = a;
 	tri.b = b;
 	tri.c = c;
+
+	return tri;
+}
+
+point translate_point(point pt, point translation) {
+	float pt_float[] = {
+		convert_fixed_8_12(pt.x),
+		convert_fixed_8_12(pt.y),
+		convert_fixed_8_12(pt.z),
+	};
+
+	float translation_float[] = {
+		convert_fixed_8_12(translation.x),
+		convert_fixed_8_12(translation.y),
+		convert_fixed_8_12(translation.z),
+	};
+
+	float result_float[] = {
+		pt_float[0] + translation_float[0],
+		pt_float[1] + translation_float[1],
+		pt_float[2] + translation_float[2],
+	};
+
+	return create_point(result_float[0], result_float[1], result_float[2], pt.col);
+}
+
+triangle translate_triangle(triangle tri, point translation) {
+	tri.a = translate_point(tri.a, translation);
+	tri.b = translate_point(tri.b, translation);
+	tri.c = translate_point(tri.c, translation);
 
 	return tri;
 }
