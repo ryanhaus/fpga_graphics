@@ -109,10 +109,35 @@ point translate_point(point pt, point translation) {
 	return create_point(result_float[0], result_float[1], result_float[2], pt.col);
 }
 
+point rotate_point(point pt, float rotation) {
+	// only rotates XZ plane about (0, 0) for now
+	float x_float = convert_fixed_8_12(pt.x);
+	float z_float = convert_fixed_8_12(pt.z);
+
+	float magnitude = sqrtf(powf(x_float, 2.0) + powf(z_float, 2.0));
+	float theta = atan2f(z_float, x_float);
+
+	x_float = magnitude * cosf(theta + rotation);
+	z_float = magnitude * sinf(theta + rotation);
+
+	pt.x = create_fixed_8_12(x_float);
+	pt.z = create_fixed_8_12(z_float);
+
+	return pt;
+}
+
 triangle translate_triangle(triangle tri, point translation) {
 	tri.a = translate_point(tri.a, translation);
 	tri.b = translate_point(tri.b, translation);
 	tri.c = translate_point(tri.c, translation);
+
+	return tri;
+}
+
+triangle rotate_triangle(triangle tri, float rotation) {
+	tri.a = rotate_point(tri.a, rotation);
+	tri.b = rotate_point(tri.b, rotation);
+	tri.c = rotate_point(tri.c, rotation);
 
 	return tri;
 }
