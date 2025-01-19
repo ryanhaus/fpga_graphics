@@ -1,6 +1,7 @@
 #!/bin/python3
 # converts a STL file to a C++ header file
 import numpy
+from random import random as rand
 from stl import mesh
 
 mesh = mesh.Mesh.from_file("res/gordon_freeman.stl")
@@ -16,9 +17,13 @@ header_file += "static triangle TRIANGLES[] = {\n";
 for tri in triangles:
     header_file += "\tcreate_tri("
 
-    header_file += f"create_point({tri[0][0]}, {tri[0][1]}, {tri[0][2]}, rgb(1.0, 0.0, 0.0)), "
-    header_file += f"create_point({tri[1][0]}, {tri[1][1]}, {tri[1][2]}, rgb(0.0, 1.0, 0.0)), "
-    header_file += f"create_point({tri[2][0]}, {tri[2][1]}, {tri[2][2]}, rgb(0.0, 0.0, 1.0))"
+    r = rand()
+    g = rand()
+    b = rand()
+
+    header_file += f"create_point({tri[0][0]}, {tri[0][1]}, {tri[0][2]}, rgb({r}, {g}, {b})), "
+    header_file += f"create_point({tri[1][0]}, {tri[1][1]}, {tri[1][2]}, rgb({r}, {g}, {b})), "
+    header_file += f"create_point({tri[2][0]}, {tri[2][1]}, {tri[2][2]}, rgb({r}, {g}, {b}))"
 
     header_file += "),\n";
 
