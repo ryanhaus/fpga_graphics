@@ -1,0 +1,3 @@
+src/sim/model.hpp
+*.fst
+bin/*
