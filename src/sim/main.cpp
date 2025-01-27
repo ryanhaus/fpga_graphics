@@ -8,9 +8,9 @@
 #include "triangle.hpp"
 #include "model.hpp"
 
-#define DISPLAY_WIDTH 320
-#define DISPLAY_HEIGHT 240
-#define WINDOW_SCALE 2
+#define DISPLAY_WIDTH 720
+#define DISPLAY_HEIGHT 480
+#define WINDOW_SCALE 1
 
 struct pixel {
 	uint16_t

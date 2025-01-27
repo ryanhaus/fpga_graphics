@@ -1,6 +1,6 @@
 /* verilator lint_off WIDTHEXPAND */
-`define DISPLAY_WIDTH 320
-`define DISPLAY_HEIGHT 240
+`define DISPLAY_WIDTH 720
+`define DISPLAY_HEIGHT 480
 `define VRAM_SIZE 2**12
 `define VRAM_DATA_BITS $bits(triangle)
 `define VRAM_ADDR_BITS $clog2(`VRAM_SIZE)
