@@ -7,7 +7,7 @@ bin/sim: src/* res/*
 		--cc \
 		--exe \
 		--build src/sim/main.cpp \
-		-CFLAGS $(shell sdl2-config --cflags) \
+		-CFLAGS "-O3 $(shell sdl2-config --cflags)" \
 		-LDFLAGS $(shell sdl2-config --libs) \
 		-sv \
 		-o sim \
